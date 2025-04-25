@@ -1,0 +1,342 @@
+/* Base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  background-color: #333;
+  color: #fff;
+}
+
+.blackjack-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Game table styles */
+.game-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.table-felt {
+  flex: 1;
+  background-color: #076324;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Dealer and player areas */
+.dealer-area, .player-area {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  position: relative;
+}
+
+.dealer-area h2, .player-area h2 {
+  position: absolute;
+  left: 15px;
+  top: 5px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+}
+
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.hand-value {
+  position: absolute;
+  right: 15px;
+  top: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+/* Game status */
+.game-status {
+  padding: 10px;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.message {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #f0f0f0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background-color: #d4af37;
+  color: #222;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn:hover {
+  background-color: #f0c040;
+}
+
+.btn:disabled {
+  background-color: #888;
+  cursor: not-allowed;
+}
+
+/* Betting controls */
+.betting-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+}
+
+.chips-selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.chip {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  border: 2px dashed #fff;
+  transition: transform 0.1s;
+}
+
+.chip:hover {
+  transform: scale(1.05);
+}
+
+.chip-1 {
+  background-color: #FFF;
+  color: #000;
+}
+
+.chip-5 {
+  background-color: #FF5252;
+  color: #FFF;
+}
+
+.chip-10 {
+  background-color: #536DFE;
+  color: #FFF;
+}
+
+.chip-25 {
+  background-color: #43A047;
+  color: #FFF;
+}
+
+.chip-100 {
+  background-color: #000;
+  color: #FFF;
+}
+
+.current-bet {
+  font-size: 1.2rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 8px 15px;
+  border-radius: 20px;
+}
+
+/* Card styles */
+.card {
+  width: 80px;
+  height: 120px;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5px;
+  font-weight: bold;
+  transition: transform 0.3s;
+}
+
+.card.red {
+  color: #d13030;
+}
+
+.card.black {
+  color: #000;
+}
+
+.card.face-down {
+  background-image: linear-gradient(135deg, #2c3e50 25%, #3498db 25%, #3498db 50%, #2c3e50 50%, #2c3e50 75%, #3498db 75%, #3498db 100%);
+  background-size: 20px 20px;
+}
+
+.card-corner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card-top-left {
+  top: 5px;
+  left: 5px;
+}
+
+.card-bottom-right {
+  bottom: 5px;
+  right: 5px;
+  transform: rotate(180deg);
+}
+
+.card-rank {
+  font-size: 1.2rem;
+}
+
+.card-suit {
+  font-size: 1rem;
+}
+
+.card-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+}
+
+/* Chips display */
+.chips-container {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+}
+
+.chips-count {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+/* Game statistics */
+.stats {
+  display: flex;
+  justify-content: space-around;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .game-table {
+    padding: 10px;
+  }
+  
+  .controls {
+    flex-wrap: wrap;
+  }
+  
+  .card {
+    width: 60px;
+    height: 90px;
+  }
+  
+  .dealer-area, .player-area {
+    min-height: 120px;
+  }
+  
+  .stats {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .stat-item {
+    flex: 1 0 40%;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    width: 50px;
+    height: 75px;
+  }
+  
+  .card-rank {
+    font-size: 1rem;
+  }
+  
+  .card-suit {
+    font-size: 0.8rem;
+  }
+  
+  .card-center {
+    font-size: 1.5rem;
+  }
+  
+  .chip {
+    width: 40px;
+    height: 40px;
+    font-size: 0.8rem;
+  }
+}
