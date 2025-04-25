@@ -10,6 +10,8 @@ import DealerArea from './components/DealerArea';
 import PlayerArea from './components/PlayerArea';
 import Statistics from './components/Statistics';
 import GameOverModal from './components/GameOverModal';
+import DeckCounter from './components/DeckCounter';
+import Notification from './components/Notification';
 
 const App: React.FC = () => {
   // Game state
@@ -22,6 +24,9 @@ const App: React.FC = () => {
   const [message, setMessage] = useState('Place your bet to start the game');
   const [showStats, setShowStats] = useState(false);
   const [showBrokeModal, setShowBrokeModal] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+
   
   // Statistics
   const [stats, setStats] = useState<GameStats>({
@@ -69,31 +74,40 @@ const App: React.FC = () => {
   };
 
   const handlePlaceBet = (betAmount: number) => {
-    if (betAmount <= 0) return;
-    
-    // Create a new deck and shuffle it
-    const newDeck = new Deck();
-    
-    // Deal initial cards
-    const newPlayerCards = [newDeck.deal()!, newDeck.deal()!];
-    const newDealerCards = [
-      { ...newDeck.deal()!, faceUp: false },
-      newDeck.deal()!
-    ];
-    
-    setDeck(newDeck);
-    setPlayerHands([{ cards: newPlayerCards, bet: betAmount }]);
-    setDealerCards(newDealerCards);
-    setChips(chips - betAmount);
-    setPhase(GamePhase.PLAYER_TURN);
-    
-    if (isBlackjack(newPlayerCards)) {
-      // If player has blackjack, move to dealer's turn
-      handleDealerPlay(newDeck, [{ cards: newPlayerCards, bet: betAmount }], newDealerCards);
-    } else {
-      setMessage('Your turn. Hit or Stand?');
-    }
-  };
+  if (betAmount <= 0) return;
+  
+  // Create a new deck and shuffle it
+  let newDeck: Deck;
+  
+  // Check if we need a new deck
+  if (deck.count < 15) {
+    newDeck = new Deck();
+    showTemporaryNotification('Shuffling new deck...');
+  } else {
+    newDeck = new Deck();
+    newDeck.cards = [...deck.cards];
+  }
+  
+  // Deal initial cards
+  const newPlayerCards = [newDeck.deal()!, newDeck.deal()!];
+  const newDealerCards = [
+    { ...newDeck.deal()!, faceUp: false },
+    newDeck.deal()!
+  ];
+  
+  setDeck(newDeck);
+  setPlayerHands([{ cards: newPlayerCards, bet: betAmount }]);
+  setDealerCards(newDealerCards);
+  setChips(chips - betAmount);
+  setPhase(GamePhase.PLAYER_TURN);
+  
+  if (isBlackjack(newPlayerCards)) {
+    // If player has blackjack, move to dealer's turn
+    handleDealerPlay(newDeck, [{ cards: newPlayerCards, bet: betAmount }], newDealerCards);
+  } else {
+    setMessage('Your turn. Hit or Stand?');
+  }
+};
 
   // Handle hit action
   const handleHit = () => {
@@ -255,30 +269,52 @@ const App: React.FC = () => {
   };
 
   // Dealer's turn
-  const handleDealerPlay = (
-    currentDeck: Deck, 
-    currentPlayerHands: { cards: Card[], bet: number }[], 
-    currentDealerCards: Card[]
-  ) => {
-    setPhase(GamePhase.DEALER_TURN);
-    
-    // Flip dealer's hidden card
-    const newDealerCards = [...currentDealerCards];
-    newDealerCards[0].faceUp = true;
-    
-    // Dealer draws until 17 or higher
-    let dealerValue = getBestHandValue(newDealerCards);
-    
-    while (dealerValue < 17) {
+  // Update the handleDealerPlay function in App.tsx
+
+const handleDealerPlay = async (
+  currentDeck: Deck, 
+  currentPlayerHands: { cards: Card[], bet: number }[], 
+  currentDealerCards: Card[]
+) => {
+  setPhase(GamePhase.DEALER_TURN);
+  
+  // Flip dealer's hidden card
+  const newDealerCards = [...currentDealerCards];
+  newDealerCards[0].faceUp = true;
+  setDealerCards([...newDealerCards]);
+  
+  // Wait 1 second after flipping the card
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Dealer draws until 17 or higher
+  let dealerValue = getBestHandValue(newDealerCards);
+  
+  const drawNextCard = async () => {
+    if (dealerValue < 17) {
       const newCard = currentDeck.deal();
-      if (!newCard) break;
+      if (!newCard) {
+        evaluateResults(newDealerCards);
+        return;
+      }
       
       newDealerCards.push(newCard);
+      setDealerCards([...newDealerCards]);
+      
       dealerValue = getBestHandValue(newDealerCards);
+      
+      // Wait 1 second before drawing the next card
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Recursively draw the next card if needed
+      drawNextCard();
+    } else {
+      // Once dealer has 17 or more, evaluate results
+      evaluateResults(newDealerCards);
     }
-    
-    setDealerCards(newDealerCards);
-    
+  };
+  
+  // Separate the evaluation logic for clarity
+  const evaluateResults = (finalDealerCards: Card[]) => {
     // Evaluate results for all hands
     let totalWinAmount = 0;
     let totalLossAmount = 0;
@@ -296,10 +332,10 @@ const App: React.FC = () => {
       }
       
       const playerValue = getBestHandValue(hand.cards);
-      const dealerValue = getBestHandValue(newDealerCards);
+      const dealerValue = getBestHandValue(finalDealerCards);
       
       if (isBlackjack(hand.cards)) {
-        if (isBlackjack(newDealerCards)) {
+        if (isBlackjack(finalDealerCards)) {
           // Both have blackjack - push
           newStats.handsPushed++;
           newChips += hand.bet; // Return bet
@@ -313,7 +349,7 @@ const App: React.FC = () => {
           newChips += hand.bet + winAmount;
           resultMessage = 'Blackjack! You win 3:2!';
         }
-      } else if (isBusted(newDealerCards)) {
+      } else if (isBusted(finalDealerCards)) {
         // Dealer busts - player wins
         newStats.handsWon++;
         totalWinAmount += hand.bet;
@@ -364,96 +400,121 @@ const App: React.FC = () => {
       setShowBrokeModal(true);
     }
   };
+  
+  // Start drawing cards
+  drawNextCard();
+};
+
+  const showTemporaryNotification = (message: string) => {
+  setNotificationMessage(message);
+  setShowNotification(true);
+  // The Notification component will automatically hide itself after the duration
+};
 
   // Start new round
   const handleNewRound = () => {
-    // Check if player is broke
-    if (chips === 0) {
-      setShowBrokeModal(true);
-      return;
-    }
-    
-    setPlayerHands([{ cards: [], bet: 0 }]);
-    setDealerCards([]);
-    setActiveHandIndex(0);
-    setPhase(GamePhase.BETTING);
-    setMessage('Place your bet to start the game');
-    
-    // Check if deck is running low
-    if (deck.count < 15) {
-      setDeck(new Deck());
-    }
-  };
+  // Check if player is broke
+  if (chips === 0) {
+    setShowBrokeModal(true);
+    return;
+  }
+  
+  setPlayerHands([{ cards: [], bet: 0 }]);
+  setDealerCards([]);
+  setActiveHandIndex(0);
+  setPhase(GamePhase.BETTING);
+  setMessage('Place your bet to start the game');
+  
+  // Check if deck is running low
+  if (deck.count < 15) {
+    const newDeck = new Deck();
+    setDeck(newDeck);
+    showTemporaryNotification('Shuffling new deck...');
+  }
+};
 
   return (
-    <div style={{
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+    padding: '20px',
+    position: 'relative'  // Add this to position the deck counter
+  }}>
+    <h1 style={{ color: 'gold', textAlign: 'center', margin: '20px 0' }}>Blackjack Game</h1>
+    
+    {/* Add the deck counter here */}
+    <DeckCounter cardsRemaining={deck.count} />
+    
+    <div style={{ 
+      flex: 1,
+      backgroundColor: '#076324', 
+      borderRadius: '8px',
+      boxShadow: '0 0 20px rgba(0, 0, 0, 0.6)',
+      padding: '20px',
       display: 'flex',
       flexDirection: 'column',
-      minHeight: '100vh',
-      padding: '20px'
+      position: 'relative'
     }}>
-      <h1 style={{ color: 'gold', textAlign: 'center', margin: '20px 0' }}>Blackjack Game</h1>
+      <DealerArea cards={dealerCards} />
       
-      <div style={{ 
-        flex: 1,
-        backgroundColor: '#076324', 
-        borderRadius: '8px',
-        boxShadow: '0 0 20px rgba(0, 0, 0, 0.6)',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <DealerArea cards={dealerCards} />
-        
-        <GameMessage message={message} />
-        
-        <PlayerArea 
-          hands={playerHands} 
-          activeHandIndex={activeHandIndex} 
-          phase={phase} 
-        />
-        
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-          {phase === GamePhase.BETTING ? (
-            <BettingControls chips={chips} onPlaceBet={handlePlaceBet} />
-          ) : (
-            <GameControls 
-              phase={phase}
-              cards={playerHands[activeHandIndex]?.cards || []}
-              chips={chips}
-              currentBet={playerHands[activeHandIndex]?.bet || 0}
-              onHit={handleHit} 
-              onStand={handleStand}
-              onDoubleDown={handleDoubleDown}
-              onSplit={handleSplit}
-              onNewRound={handleNewRound} 
-            />
-          )}
-        </div>
-        
-        <ChipsDisplay chips={chips} />
-        
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
-          <button 
-            onClick={toggleStats} 
-            style={{ 
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              textDecoration: 'underline',
-              cursor: 'pointer'
-            }}
-          >
-            {showStats ? 'Hide Statistics' : 'Show Statistics'}
-          </button>
-        </div>
-        
-        <Statistics stats={stats} show={showStats} />
+      <GameMessage message={message} />
+      
+      <PlayerArea 
+        hands={playerHands} 
+        activeHandIndex={activeHandIndex} 
+        phase={phase} 
+      />
+      
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+        {phase === GamePhase.BETTING ? (
+          <BettingControls chips={chips} onPlaceBet={handlePlaceBet} />
+        ) : (
+          <GameControls 
+            phase={phase}
+            cards={playerHands[activeHandIndex]?.cards || []}
+            chips={chips}
+            currentBet={playerHands[activeHandIndex]?.bet || 0}
+            onHit={handleHit} 
+            onStand={handleStand}
+            onDoubleDown={handleDoubleDown}
+            onSplit={handleSplit}
+            onNewRound={handleNewRound} 
+          />
+        )}
       </div>
       
-      {showBrokeModal && <GameOverModal onReset={handleResetGame} onLoan={handleGetLoan} />}
+      <ChipsDisplay chips={chips} />
+      
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
+        <button 
+          onClick={toggleStats} 
+          style={{ 
+            background: 'none',
+            border: 'none',
+            color: 'white',
+            textDecoration: 'underline',
+            cursor: 'pointer'
+          }}
+        >
+          {showStats ? 'Hide Statistics' : 'Show Statistics'}
+        </button>
+      </div>
+      
+      <Statistics stats={stats} show={showStats} />
     </div>
-  );
+    
+    {showBrokeModal && <GameOverModal onReset={handleResetGame} onLoan={handleGetLoan} />}
+    
+    {/* Add the notification component */}
+    {showNotification && (
+      <Notification 
+        message={notificationMessage} 
+        onClose={() => setShowNotification(false)} 
+      />
+    )}
+  </div>
+);
 };
 
 export default App;

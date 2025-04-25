@@ -90,13 +90,12 @@ export const isBlackjack = (cards: Card[]): boolean => {
   );
 };
 
+
 export const canSplit = (cards: Card[]): boolean => {
   if (cards.length !== 2) return false;
   
-  const value1 = getCardValue(cards[0])[0];
-  const value2 = getCardValue(cards[1])[0];
-  
-  return value1 === value2;
+  // Instead of checking values, check the actual ranks
+  return cards[0].rank === cards[1].rank;
 };
 
 export const canDoubleDown = (cards: Card[]): boolean => {

@@ -1,3 +1,4 @@
+// src/components/Hand.tsx
 import React from 'react';
 import CardComponent from './Card';
 import { Card } from '../models/types';
@@ -19,7 +20,7 @@ const Hand: React.FC<HandProps> = ({
   const blackjack = isBlackjack(cards);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', width: 'fit-content' }}>
       <div style={{ display: 'flex', gap: '10px' }}>
         {cards.map((card, index) => (
           <CardComponent key={index} card={card} />
@@ -29,13 +30,14 @@ const Hand: React.FC<HandProps> = ({
       {!hideValue && cards.length > 0 && (
         <div style={{
           position: 'absolute',
-          right: '-10px',
-          top: '-10px',
+          right: '0',
+          top: '-25px',
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           color: '#fff',
           padding: '2px 8px',
           borderRadius: '10px',
-          fontSize: '0.9rem'
+          fontSize: '0.9rem',
+          zIndex: 10
         }}>
           {busted ? 'Bust!' : (blackjack ? 'Blackjack!' : handValue)}
         </div>
