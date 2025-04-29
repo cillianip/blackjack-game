@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Deck } from './models/Deck';
-import { Card, GamePhase, GameResult, GameStats } from './models/types';
+import { Card, GamePhase, GameStats } from './models/types';
 import { getBestHandValue, isBusted, isBlackjack, canSplit } from './utils/cardUtils';
 import BettingControls from './components/BettingControls';
 import GameControls from './components/GameControls';
