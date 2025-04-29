@@ -101,9 +101,52 @@ const App: React.FC = () => {
   setChips(chips - betAmount);
   setPhase(GamePhase.PLAYER_TURN);
   
-  if (isBlackjack(newPlayerCards)) {
-    // If player has blackjack, move to dealer's turn
-    handleDealerPlay(newDeck, [{ cards: newPlayerCards, bet: betAmount }], newDealerCards);
+  const playerHasBlackjack = isBlackjack(newPlayerCards);
+  
+  const dealerCards = [...newDealerCards];
+  dealerCards[0].faceUp = true;
+  const dealerHasBlackjack = isBlackjack(dealerCards);
+  
+  newDealerCards[0].faceUp = false;
+  
+  if (playerHasBlackjack || dealerHasBlackjack) {
+    if (playerHasBlackjack && dealerHasBlackjack) {
+      // Both have blackjack - it's a push
+      setMessage('Both have Blackjack! Push.');
+      setChips(chips + betAmount); // Return the bet
+    } else if (playerHasBlackjack) {
+      setMessage('Blackjack! You win 3:2!');
+      const winAmount = Math.floor(betAmount * 1.5);
+      setChips(chips + betAmount + winAmount); // Return bet + winnings
+    } else {
+      setMessage('Dealer has Blackjack! You lose.');
+    }
+    
+    // Flip dealer's card to show blackjack
+    newDealerCards[0].faceUp = true;
+    setDealerCards([...newDealerCards]);
+    
+    setPhase(GamePhase.GAME_OVER);
+    
+    // Update stats
+    setStats(prev => {
+      const newStats = { ...prev, handsPlayed: prev.handsPlayed + 1 };
+      
+      if (playerHasBlackjack && dealerHasBlackjack) {
+        newStats.handsPushed = prev.handsPushed + 1;
+      } else if (playerHasBlackjack) {
+        // Player wins with blackjack
+        newStats.handsWon = prev.handsWon + 1;
+        newStats.blackjacks = prev.blackjacks + 1;
+        newStats.largestWin = Math.max(prev.largestWin, Math.floor(betAmount * 1.5));
+      } else {
+        // Dealer wins with blackjack
+        newStats.handsLost = prev.handsLost + 1;
+        newStats.largestLoss = Math.max(prev.largestLoss, betAmount);
+      }
+      
+      return newStats;
+    });
   } else {
     setMessage('Your turn. Hit or Stand?');
   }
