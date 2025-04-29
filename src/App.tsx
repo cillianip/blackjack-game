@@ -395,8 +395,8 @@ const handleDealerPlay = async (
     setMessage(resultMessage);
     setPhase(GamePhase.GAME_OVER);
     
-    // Check if player is broke
-    if (newChips === 0) {
+    // Check if player is broke or has less than minimum bet
+    if (newChips < 5) {
       setShowBrokeModal(true);
     }
   };
@@ -413,8 +413,8 @@ const handleDealerPlay = async (
 
   // Start new round
   const handleNewRound = () => {
-  // Check if player is broke
-  if (chips === 0) {
+  // Check if player is broke or has less than minimum bet
+  if (chips < 5) {
     setShowBrokeModal(true);
     return;
   }
