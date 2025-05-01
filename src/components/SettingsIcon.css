@@ -1,0 +1,9 @@
+.settings-icon {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.settings-icon:hover {
+  transform: rotate(30deg);
+  color: gold;
+}

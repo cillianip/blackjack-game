@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Deck } from './models/Deck';
 import { Card, GamePhase, GameStats } from './models/types';
 import { getBestHandValue, isBusted, isBlackjack, canSplit } from './utils/cardUtils';
+import { isSoft17 } from './utils/handUtils';
 import BettingControls from './components/BettingControls';
 import GameControls from './components/GameControls';
 import GameMessage from './components/GameMessage';
@@ -12,6 +13,8 @@ import Statistics from './components/Statistics';
 import GameOverModal from './components/GameOverModal';
 import DeckCounter from './components/DeckCounter';
 import Notification from './components/Notification';
+import SettingsIcon from './components/SettingsIcon';
+import SettingsModal from './components/SettingsModal';
 
 const App: React.FC = () => {
   // Game state
@@ -26,6 +29,8 @@ const App: React.FC = () => {
   const [showBrokeModal, setShowBrokeModal] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [dealerHitSoft17, setDealerHitSoft17] = useState(true);
 
   
   // Statistics
@@ -71,6 +76,14 @@ const App: React.FC = () => {
 
   const toggleStats = () => {
     setShowStats(!showStats);
+  };
+  
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
+  
+  const handleToggleDealerHitSoft17 = () => {
+    setDealerHitSoft17(!dealerHitSoft17);
   };
 
   const handlePlaceBet = (betAmount: number) => {
@@ -329,11 +342,11 @@ const handleDealerPlay = async (
   // Wait 1 second after flipping the card
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Dealer draws until 17 or higher
+  // Dealer draws until 17 or higher (or soft 17 if that option is enabled)
   let dealerValue = getBestHandValue(newDealerCards);
   
   const drawNextCard = async () => {
-    if (dealerValue < 17) {
+    if (dealerValue < 17 || (dealerHitSoft17 && dealerValue === 17 && isSoft17(newDealerCards))) {
       const newCard = currentDeck.deal();
       if (!newCard) {
         evaluateResults(newDealerCards);
@@ -351,7 +364,7 @@ const handleDealerPlay = async (
       // Recursively draw the next card if needed
       drawNextCard();
     } else {
-      // Once dealer has 17 or more, evaluate results
+      // Once dealer has appropriate value, evaluate results
       evaluateResults(newDealerCards);
     }
   };
@@ -484,7 +497,28 @@ const handleDealerPlay = async (
     padding: '20px',
     position: 'relative'  // Add this to position the deck counter
   }}>
-    <h1 style={{ color: 'gold', textAlign: 'center', margin: '20px 0' }}>Blackjack Game</h1>
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      margin: '20px 0'
+    }}>
+      <div style={{ width: '40px' }} /> {/* Spacer for alignment */}
+      <h1 style={{ color: 'gold', textAlign: 'center', margin: 0 }}>Blackjack Game</h1>
+      <div 
+        style={{ 
+          width: '40px', 
+          height: '40px', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          cursor: 'pointer',
+          color: 'white' 
+        }}
+      >
+        <SettingsIcon onClick={toggleSettings} />
+      </div>
+    </div>
     
     {/* Add the deck counter here */}
     <DeckCounter cardsRemaining={deck.count} />
@@ -548,6 +582,14 @@ const handleDealerPlay = async (
     </div>
     
     {showBrokeModal && <GameOverModal onReset={handleResetGame} onLoan={handleGetLoan} />}
+    
+    {/* Add the settings modal */}
+    <SettingsModal 
+      isOpen={showSettings} 
+      onClose={toggleSettings} 
+      dealerHitSoft17={dealerHitSoft17}
+      onToggleDealerHitSoft17={handleToggleDealerHitSoft17}
+    />
     
     {/* Add the notification component */}
     {showNotification && (
