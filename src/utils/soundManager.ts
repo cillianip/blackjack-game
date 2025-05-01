@@ -18,19 +18,19 @@ export enum SoundEffect {
   WARNING = 'warning'
 }
 
-// Map sound effects to their file paths
+// Map sound effects to their file paths - using relative paths for development
 const SOUND_FILES: Record<SoundEffect, string> = {
-  [SoundEffect.CARD_SHUFFLE]: '/sounds/shuffle.mp3',
-  [SoundEffect.CARD_DEAL]: '/sounds/deal.mp3',
-  [SoundEffect.CARD_FLIP]: '/sounds/flip.mp3',
-  [SoundEffect.CHIP_BET]: '/sounds/chip.mp3',
-  [SoundEffect.CHIP_STACK]: '/sounds/chip-stack.mp3',
-  [SoundEffect.BUTTON_CLICK]: '/sounds/click.mp3',
-  [SoundEffect.WIN]: '/sounds/win.mp3',
-  [SoundEffect.LOSE]: '/sounds/lose.mp3',
-  [SoundEffect.BLACKJACK]: '/sounds/blackjack.mp3',
-  [SoundEffect.PUSH]: '/sounds/push.mp3',
-  [SoundEffect.WARNING]: '/sounds/warning.mp3'
+  [SoundEffect.CARD_SHUFFLE]: './sounds/shuffle.mp3',
+  [SoundEffect.CARD_DEAL]: './sounds/deal.mp3',
+  [SoundEffect.CARD_FLIP]: './sounds/flip.mp3',
+  [SoundEffect.CHIP_BET]: './sounds/chip.mp3',
+  [SoundEffect.CHIP_STACK]: './sounds/chip-stack.mp3',
+  [SoundEffect.BUTTON_CLICK]: './sounds/click.mp3',
+  [SoundEffect.WIN]: './sounds/win.mp3',
+  [SoundEffect.LOSE]: './sounds/lose.mp3',
+  [SoundEffect.BLACKJACK]: './sounds/blackjack.mp3',
+  [SoundEffect.PUSH]: './sounds/push.mp3',
+  [SoundEffect.WARNING]: './sounds/warning.mp3'
 };
 
 class SoundManager {

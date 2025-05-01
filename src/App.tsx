@@ -54,7 +54,7 @@ const App: React.FC = () => {
       source.start(0);
       
       // Add a specific debug sound to test audio
-      const testSound = new Audio('/sounds/click.mp3');
+      const testSound = new Audio('./sounds/click.mp3');
       testSound.volume = 0.1;
       testSound.play()
         .then(() => console.log("Test sound played successfully!"))
