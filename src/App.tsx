@@ -35,9 +35,52 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [dealerHitSoft17, setDealerHitSoft17] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
   
   // Initialize sound effects
   const { playSound } = useSoundEffects(soundEnabled);
+  
+  // Unlock audio on first user interaction
+  useEffect(() => {
+    const unlockAudio = () => {
+      console.log("User interaction detected - unlocking audio");
+      
+      // Create and play a silent audio clip to unlock audio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const silentBuffer = audioContext.createBuffer(1, 1, 22050);
+      const source = audioContext.createBufferSource();
+      source.buffer = silentBuffer;
+      source.connect(audioContext.destination);
+      source.start(0);
+      
+      // Add a specific debug sound to test audio
+      const testSound = new Audio('/sounds/click.mp3');
+      testSound.volume = 0.1;
+      testSound.play()
+        .then(() => console.log("Test sound played successfully!"))
+        .catch(err => console.error("Test sound failed:", err));
+      
+      // Mark audio as unlocked
+      setAudioUnlocked(true);
+      
+      // Remove event listeners after unlock
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+    
+    // Add event listeners to unlock audio on user interaction
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+    
+    // Clean up listeners on component unmount
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+  }, []);
 
   
   // Statistics

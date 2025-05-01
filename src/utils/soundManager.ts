@@ -55,9 +55,16 @@ class SoundManager {
   public init(): Promise<void> {
     if (this.initialized) return Promise.resolve();
 
+    console.log('Initializing sound manager...');
+    console.log('Sound files to load:', Object.entries(SOUND_FILES));
+
     const loadPromises = Object.entries(SOUND_FILES).map(([effect, path]) => {
       return new Promise<void>((resolve) => {
         const audio = new Audio();
+        
+        // Add debug logging for audio loading
+        console.log(`Attempting to load sound: ${effect} from path: ${path}`);
+        
         audio.src = path;
         audio.volume = this.volume;
         
@@ -67,10 +74,16 @@ class SoundManager {
         // Store in our sounds map
         this.sounds.set(effect as SoundEffect, audio);
         
-        // Consider loading complete even if there's an error
-        audio.addEventListener('canplaythrough', () => resolve(), { once: true });
-        audio.addEventListener('error', () => {
-          console.warn(`Failed to load sound: ${path}`);
+        // Add debug event listeners
+        audio.addEventListener('canplaythrough', () => {
+          console.log(`Successfully loaded sound: ${effect}`);
+          resolve();
+        }, { once: true });
+        
+        audio.addEventListener('error', (e) => {
+          console.error(`Failed to load sound: ${effect} from ${path}`, e);
+          console.error('Audio error code:', (audio as any).error?.code);
+          console.error('Audio error message:', (audio as any).error?.message);
           resolve();
         });
       });
@@ -79,13 +92,18 @@ class SoundManager {
     return Promise.all(loadPromises).then(() => {
       this.initialized = true;
       console.log('Sound manager initialized successfully');
+      console.log('Loaded sounds:', [...this.sounds.keys()]);
     });
   }
 
   // Play a sound effect
   public play(effect: SoundEffect): void {
-    if (!this.enabled || !this.initialized) return;
+    if (!this.enabled || !this.initialized) {
+      console.log(`Not playing sound ${effect}. Enabled: ${this.enabled}, Initialized: ${this.initialized}`);
+      return;
+    }
 
+    console.log(`Attempting to play sound: ${effect}`);
     const sound = this.sounds.get(effect);
     if (!sound) {
       console.warn(`Sound effect not found: ${effect}`);
@@ -95,9 +113,22 @@ class SoundManager {
     // Clone the audio to allow for overlapping sounds
     const soundClone = sound.cloneNode() as HTMLAudioElement;
     soundClone.volume = this.volume;
-    soundClone.play().catch(err => {
+    
+    // Add event listeners for debugging
+    soundClone.addEventListener('playing', () => {
+      console.log(`Sound ${effect} started playing`);
+    });
+    
+    soundClone.addEventListener('ended', () => {
+      console.log(`Sound ${effect} finished playing`);
+    });
+    
+    soundClone.play().then(() => {
+      console.log(`Sound ${effect} play() promise resolved successfully`);
+    }).catch(err => {
       // Browsers may block audio until user interacts with the page
-      console.warn(`Error playing sound: ${err}`);
+      console.error(`Error playing sound ${effect}:`, err);
+      console.error(`Browser may be blocking autoplay. User interaction needed.`);
     });
   }
 
