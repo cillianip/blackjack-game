@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Deck } from './models/Deck';
 import { Card, GamePhase, GameStats } from './models/types';
 import { getBestHandValue, isBusted, isBlackjack, canSplit } from './utils/cardUtils';
@@ -15,6 +15,8 @@ import DeckCounter from './components/DeckCounter';
 import Notification from './components/Notification';
 import SettingsIcon from './components/SettingsIcon';
 import SettingsModal from './components/SettingsModal';
+import useSoundEffects from './hooks/useSoundEffects';
+import { SoundEffect } from './utils/soundManager';
 
 const App: React.FC = () => {
   // Game state
@@ -32,6 +34,10 @@ const App: React.FC = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [dealerHitSoft17, setDealerHitSoft17] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // Initialize sound effects
+  const { playSound } = useSoundEffects(soundEnabled);
 
   
   // Statistics
@@ -85,6 +91,7 @@ const App: React.FC = () => {
   
   const handleToggleDealerHitSoft17 = () => {
     setDealerHitSoft17(!dealerHitSoft17);
+    playSound(SoundEffect.BUTTON_CLICK);
   };
   
   const handleDeckCountChange = (count: number) => {
@@ -92,6 +99,11 @@ const App: React.FC = () => {
     // Don't immediately create a new deck - wait until the next deal
     // to avoid disrupting the current game
     showTemporaryNotification(`Deck count set to ${count}. Will take effect on next shuffle.`);
+    playSound(SoundEffect.BUTTON_CLICK);
+  };
+  
+  const handleToggleSound = () => {
+    setSoundEnabled(!soundEnabled);
   };
 
   const handlePlaceBet = (betAmount: number) => {
@@ -105,6 +117,7 @@ const App: React.FC = () => {
     // Create fresh deck with the current deck count setting
     newDeck = new Deck(deckCount);
     showTemporaryNotification(`Shuffling new ${deckCount}-deck shoe...`);
+    playSound(SoundEffect.CARD_SHUFFLE);
   } else {
     // Continue with existing deck
     newDeck = new Deck(deckCount);
@@ -112,11 +125,15 @@ const App: React.FC = () => {
   }
   
   // Deal initial cards
+  playSound(SoundEffect.CARD_DEAL);
   const newPlayerCards = [newDeck.deal()!, newDeck.deal()!];
   const newDealerCards = [
     { ...newDeck.deal()!, faceUp: false },
     newDeck.deal()!
   ];
+  
+  // Play card deal sounds with slight delay
+  setTimeout(() => playSound(SoundEffect.CARD_DEAL), 200);
   
   setDeck(newDeck);
   setPlayerHands([{ cards: newPlayerCards, bet: betAmount }]);
@@ -185,6 +202,9 @@ const App: React.FC = () => {
     const newCard = newDeck.deal();
     if (!newCard) return;
     
+    // Play card dealing sound
+    playSound(SoundEffect.CARD_DEAL);
+    
     const newPlayerHands = [...playerHands];
     newPlayerHands[activeHandIndex].cards.push(newCard);
     
@@ -192,6 +212,9 @@ const App: React.FC = () => {
     setDeck(newDeck);
     
     if (isBusted(newPlayerHands[activeHandIndex].cards)) {
+      // Play bust sound
+      playSound(SoundEffect.LOSE);
+      
       if (activeHandIndex < playerHands.length - 1) {
         // If there are more hands to play
         setActiveHandIndex(activeHandIndex + 1);
@@ -214,6 +237,9 @@ const App: React.FC = () => {
   // Handle stand action
   const handleStand = () => {
     if (phase !== GamePhase.PLAYER_TURN) return;
+    
+    // Play button click sound
+    playSound(SoundEffect.BUTTON_CLICK);
     
     if (activeHandIndex < playerHands.length - 1) {
       // Move to next hand if there are more
@@ -349,6 +375,9 @@ const handleDealerPlay = async (
   newDealerCards[0].faceUp = true;
   setDealerCards([...newDealerCards]);
   
+  // Play card flip sound
+  playSound(SoundEffect.CARD_FLIP);
+  
   // Wait 1 second after flipping the card
   await new Promise(resolve => setTimeout(resolve, 1000));
   
@@ -362,6 +391,9 @@ const handleDealerPlay = async (
         evaluateResults(newDealerCards);
         return;
       }
+      
+      // Play card dealing sound
+      playSound(SoundEffect.CARD_DEAL);
       
       newDealerCards.push(newCard);
       setDealerCards([...newDealerCards]);
@@ -406,6 +438,7 @@ const handleDealerPlay = async (
           newStats.handsPushed++;
           newChips += hand.bet; // Return bet
           resultMessage = 'Both have Blackjack! Push.';
+          playSound(SoundEffect.PUSH);
         } else {
           // Player has blackjack - win 3:2
           newStats.handsWon++;
@@ -414,6 +447,7 @@ const handleDealerPlay = async (
           totalWinAmount += winAmount;
           newChips += hand.bet + winAmount;
           resultMessage = 'Blackjack! You win 3:2!';
+          playSound(SoundEffect.BLACKJACK);
         }
       } else if (isBusted(finalDealerCards)) {
         // Dealer busts - player wins
@@ -421,22 +455,26 @@ const handleDealerPlay = async (
         totalWinAmount += hand.bet;
         newChips += hand.bet * 2; // Original bet + winnings
         resultMessage = 'Dealer busts! You win!';
+        playSound(SoundEffect.WIN);
       } else if (playerValue > dealerValue) {
         // Player has higher value - win
         newStats.handsWon++;
         totalWinAmount += hand.bet;
         newChips += hand.bet * 2; // Original bet + winnings
         resultMessage = 'You win!';
+        playSound(SoundEffect.WIN);
       } else if (playerValue < dealerValue) {
         // Dealer has higher value - lose
         newStats.handsLost++;
         totalLossAmount += hand.bet;
         resultMessage = 'Dealer wins!';
+        playSound(SoundEffect.LOSE);
       } else {
         // Same value - push
         newStats.handsPushed++;
         newChips += hand.bet; // Return bet
         resultMessage = 'Push!';
+        playSound(SoundEffect.PUSH);
       }
     }
     
@@ -601,6 +639,8 @@ const handleDealerPlay = async (
       onToggleDealerHitSoft17={handleToggleDealerHitSoft17}
       deckCount={deckCount}
       onDeckCountChange={handleDeckCountChange}
+      soundEnabled={soundEnabled}
+      onToggleSound={handleToggleSound}
     />
     
     {/* Add the notification component */}
