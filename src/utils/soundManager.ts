@@ -18,19 +18,20 @@ export enum SoundEffect {
   WARNING = 'warning'
 }
 
-// Map sound effects to their file paths - using relative paths for development
+// Map sound effects to their file paths - using paths that work in both dev and production
+const BASE_URL = '/blackjack-game';  // This matches the base in vite.config.ts
 const SOUND_FILES: Record<SoundEffect, string> = {
-  [SoundEffect.CARD_SHUFFLE]: './sounds/shuffle.mp3',
-  [SoundEffect.CARD_DEAL]: './sounds/deal.mp3',
-  [SoundEffect.CARD_FLIP]: './sounds/flip.mp3',
-  [SoundEffect.CHIP_BET]: './sounds/chip.mp3',
-  [SoundEffect.CHIP_STACK]: './sounds/chip-stack.mp3',
-  [SoundEffect.BUTTON_CLICK]: './sounds/click.mp3',
-  [SoundEffect.WIN]: './sounds/win.mp3',
-  [SoundEffect.LOSE]: './sounds/lose.mp3',
-  [SoundEffect.BLACKJACK]: './sounds/blackjack.mp3',
-  [SoundEffect.PUSH]: './sounds/push.mp3',
-  [SoundEffect.WARNING]: './sounds/warning.mp3'
+  [SoundEffect.CARD_SHUFFLE]: `${BASE_URL}/sounds/shuffle.mp3`,
+  [SoundEffect.CARD_DEAL]: `${BASE_URL}/sounds/deal.mp3`,
+  [SoundEffect.CARD_FLIP]: `${BASE_URL}/sounds/flip.mp3`,
+  [SoundEffect.CHIP_BET]: `${BASE_URL}/sounds/chip.mp3`,
+  [SoundEffect.CHIP_STACK]: `${BASE_URL}/sounds/chip-stack.mp3`,
+  [SoundEffect.BUTTON_CLICK]: `${BASE_URL}/sounds/click.mp3`,
+  [SoundEffect.WIN]: `${BASE_URL}/sounds/win.mp3`,
+  [SoundEffect.LOSE]: `${BASE_URL}/sounds/lose.mp3`,
+  [SoundEffect.BLACKJACK]: `${BASE_URL}/sounds/blackjack.mp3`,
+  [SoundEffect.PUSH]: `${BASE_URL}/sounds/push.mp3`,
+  [SoundEffect.WARNING]: `${BASE_URL}/sounds/warning.mp3`
 };
 
 class SoundManager {

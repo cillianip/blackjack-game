@@ -54,11 +54,19 @@ const App: React.FC = () => {
       source.start(0);
       
       // Add a specific debug sound to test audio
-      const testSound = new Audio('./sounds/click.mp3');
+      const testSound = new Audio('/blackjack-game/sounds/click.mp3');
       testSound.volume = 0.1;
       testSound.play()
         .then(() => console.log("Test sound played successfully!"))
-        .catch(err => console.error("Test sound failed:", err));
+        .catch(err => {
+          console.error("Test sound failed:", err);
+          // Try alternate path if first attempt failed
+          const altTestSound = new Audio('./sounds/click.mp3');
+          altTestSound.volume = 0.1;
+          altTestSound.play()
+            .then(() => console.log("Alt test sound played successfully!"))
+            .catch(altErr => console.error("Alt test sound also failed:", altErr));
+        });
       
       // Mark audio as unlocked
       setAudioUnlocked(true);
