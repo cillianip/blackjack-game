@@ -2,6 +2,7 @@ import { Card, Suit, Rank } from './types';
 
 export class Deck {
   cards: Card[] = [];
+  private _initialCardCount: number = 0;
   
   constructor(numDecks: number = 1) {
     this.initialize(numDecks);
@@ -21,6 +22,9 @@ export class Deck {
         }
       }
     }
+    
+    // Store the initial count for calculating when to shuffle
+    this._initialCardCount = this.cards.length;
     
     this.shuffle();
   }
@@ -45,5 +49,22 @@ export class Deck {
   
   get count(): number {
     return this.cards.length;
+  }
+  
+  get totalCardCount(): number {
+    return this._initialCardCount;
+  }
+  
+  get percentRemaining(): number {
+    return (this.cards.length / this._initialCardCount) * 100;
+  }
+  
+  shouldReshuffle(): boolean {
+    // Reshuffle when fewer than 25% of cards remain
+    return this.percentRemaining < 25;
+  }
+  
+  addCard(card: Card): void {
+    this.cards.push(card);
   }
 }

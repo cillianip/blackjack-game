@@ -19,7 +19,8 @@ import SettingsModal from './components/SettingsModal';
 const App: React.FC = () => {
   // Game state
   const [phase, setPhase] = useState<GamePhase>(GamePhase.BETTING);
-  const [deck, setDeck] = useState<Deck>(new Deck());
+  const [deckCount, setDeckCount] = useState<number>(1);
+  const [deck, setDeck] = useState<Deck>(new Deck(deckCount));
   const [dealerCards, setDealerCards] = useState<Card[]>([]);
   const [playerHands, setPlayerHands] = useState<{ cards: Card[], bet: number }[]>([{ cards: [], bet: 0 }]);
   const [activeHandIndex, setActiveHandIndex] = useState(0);
@@ -85,6 +86,13 @@ const App: React.FC = () => {
   const handleToggleDealerHitSoft17 = () => {
     setDealerHitSoft17(!dealerHitSoft17);
   };
+  
+  const handleDeckCountChange = (count: number) => {
+    setDeckCount(count);
+    // Don't immediately create a new deck - wait until the next deal
+    // to avoid disrupting the current game
+    showTemporaryNotification(`Deck count set to ${count}. Will take effect on next shuffle.`);
+  };
 
   const handlePlaceBet = (betAmount: number) => {
   if (betAmount <= 0) return;
@@ -93,11 +101,13 @@ const App: React.FC = () => {
   let newDeck: Deck;
   
   // Check if we need a new deck
-  if (deck.count < 15) {
-    newDeck = new Deck();
-    showTemporaryNotification('Shuffling new deck...');
+  if (deck.shouldReshuffle()) {
+    // Create fresh deck with the current deck count setting
+    newDeck = new Deck(deckCount);
+    showTemporaryNotification(`Shuffling new ${deckCount}-deck shoe...`);
   } else {
-    newDeck = new Deck();
+    // Continue with existing deck
+    newDeck = new Deck(deckCount);
     newDeck.cards = [...deck.cards];
   }
   
@@ -482,10 +492,10 @@ const handleDealerPlay = async (
   setMessage('Place your bet to start the game');
   
   // Check if deck is running low
-  if (deck.count < 15) {
-    const newDeck = new Deck();
+  if (deck.shouldReshuffle()) {
+    const newDeck = new Deck(deckCount);
     setDeck(newDeck);
-    showTemporaryNotification('Shuffling new deck...');
+    showTemporaryNotification(`Shuffling new ${deckCount}-deck shoe...`);
   }
 };
 
@@ -521,7 +531,7 @@ const handleDealerPlay = async (
     </div>
     
     {/* Add the deck counter here */}
-    <DeckCounter cardsRemaining={deck.count} />
+    <DeckCounter cardsRemaining={deck.count} totalCards={deck.totalCardCount} />
     
     <div style={{ 
       flex: 1,
@@ -589,6 +599,8 @@ const handleDealerPlay = async (
       onClose={toggleSettings} 
       dealerHitSoft17={dealerHitSoft17}
       onToggleDealerHitSoft17={handleToggleDealerHitSoft17}
+      deckCount={deckCount}
+      onDeckCountChange={handleDeckCountChange}
     />
     
     {/* Add the notification component */}
