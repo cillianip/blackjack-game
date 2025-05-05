@@ -12,6 +12,7 @@ interface SettingsState {
   animationSpeed: AnimationSpeed;
   dealerSpeed: AnimationSpeed;
   deckCount: number;
+  dealerHitSoft17: boolean;
 }
 
 const initialState: SettingsState = {
@@ -19,7 +20,8 @@ const initialState: SettingsState = {
   musicEnabled: true,
   animationSpeed: AnimationSpeed.NORMAL,
   dealerSpeed: AnimationSpeed.NORMAL,
-  deckCount: 1
+  deckCount: 1,
+  dealerHitSoft17: true // Vegas rules typically have dealer hit on soft 17
 };
 
 const settingsSlice = createSlice({
@@ -40,6 +42,9 @@ const settingsSlice = createSlice({
     },
     setDeckCount(state, action: PayloadAction<number>) {
       state.deckCount = action.payload;
+    },
+    toggleDealerHitSoft17(state) {
+      state.dealerHitSoft17 = !state.dealerHitSoft17;
     }
   }
 });
@@ -49,6 +54,7 @@ export const {
   toggleMusic,
   setAnimationSpeed,
   setDealerSpeed,
-  setDeckCount
+  setDeckCount,
+  toggleDealerHitSoft17
 } = settingsSlice.actions;
 export default settingsSlice.reducer;

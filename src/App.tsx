@@ -204,13 +204,16 @@ const App: React.FC = () => {
     if (playerHasBlackjack && dealerHasBlackjack) {
       // Both have blackjack - it's a push
       setMessage('Both have Blackjack! Push.');
+      playSound(SoundEffect.PUSH);
       setChips(chips + betAmount); // Return the bet
     } else if (playerHasBlackjack) {
       setMessage('Blackjack! You win 3:2!');
+      playSound(SoundEffect.BLACKJACK);
       const winAmount = Math.floor(betAmount * 1.5);
       setChips(chips + betAmount + winAmount); // Return bet + winnings
     } else {
       setMessage('Dealer has Blackjack! You lose.');
+      playSound(SoundEffect.LOSE);
     }
     
     // Flip dealer's card to show blackjack

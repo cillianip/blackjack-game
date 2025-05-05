@@ -2,6 +2,8 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Deck } from '../../models/Deck';
 import { Hand } from '../../models/Hand';
 import { Card, Suit, Rank } from '../../models/Card';
+import { isSoft17 } from '../../utils/handUtils';
+import { RootState } from './index';
 
 export enum GamePhase {
   BETTING = 'betting',
