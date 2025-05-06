@@ -250,6 +250,29 @@ const App: React.FC = () => {
   const handleHit = () => {
     if (phase !== GamePhase.PLAYER_TURN) return;
     
+    const currentHand = playerHands[activeHandIndex];
+    
+    // Skip hit if this hand has blackjack
+    if (isBlackjack(currentHand.cards)) {
+      // Automatically move to next hand or dealer play
+      if (activeHandIndex < playerHands.length - 1) {
+        setActiveHandIndex(activeHandIndex + 1);
+        
+        // Check if the next hand has blackjack
+        const nextHand = playerHands[activeHandIndex + 1];
+        if (isBlackjack(nextHand.cards)) {
+          playSound(SoundEffect.BLACKJACK);
+          setMessage(`Blackjack on hand ${activeHandIndex + 2}!`);
+        } else {
+          setMessage(`Playing hand ${activeHandIndex + 2}...`);
+        }
+      } else {
+        // No more hands, move to dealer turn
+        handleDealerPlay(deck, playerHands, dealerCards);
+      }
+      return;
+    }
+    
     const newDeck = new Deck();
     newDeck.cards = [...deck.cards];
     
@@ -265,6 +288,30 @@ const App: React.FC = () => {
     setPlayerHands(newPlayerHands);
     setDeck(newDeck);
     
+    // Check if new hand now has 21 (not blackjack)
+    if (getBestHandValue(newPlayerHands[activeHandIndex].cards) === 21) {
+      // Don't play win sound until we compare with dealer's hand
+      setMessage('21! Moving to next hand...');
+      
+      // Automatically move to next hand or dealer play
+      if (activeHandIndex < newPlayerHands.length - 1) {
+        setActiveHandIndex(activeHandIndex + 1);
+        
+        // Check if the next hand has blackjack
+        const nextHand = newPlayerHands[activeHandIndex + 1];
+        if (isBlackjack(nextHand.cards)) {
+          playSound(SoundEffect.BLACKJACK);
+          setMessage(`Blackjack on hand ${activeHandIndex + 2}!`);
+        } else {
+          setMessage(`Playing hand ${activeHandIndex + 2}...`);
+        }
+      } else {
+        // No more hands, move to dealer turn
+        handleDealerPlay(newDeck, newPlayerHands, dealerCards);
+      }
+      return;
+    }
+    
     if (isBusted(newPlayerHands[activeHandIndex].cards)) {
       // Play bust sound
       playSound(SoundEffect.LOSE);
@@ -272,7 +319,15 @@ const App: React.FC = () => {
       if (activeHandIndex < playerHands.length - 1) {
         // If there are more hands to play
         setActiveHandIndex(activeHandIndex + 1);
-        setMessage(`Playing hand ${activeHandIndex + 2}...`);
+        
+        // Check if the next hand has blackjack
+        const nextHand = newPlayerHands[activeHandIndex + 1];
+        if (isBlackjack(nextHand.cards)) {
+          playSound(SoundEffect.BLACKJACK);
+          setMessage(`Blackjack on hand ${activeHandIndex + 2}!`);
+        } else {
+          setMessage(`Playing hand ${activeHandIndex + 2}...`);
+        }
       } else {
         setMessage('Bust! You lose.');
         setPhase(GamePhase.GAME_OVER);
@@ -295,11 +350,28 @@ const App: React.FC = () => {
     // Play button click sound
     playSound(SoundEffect.BUTTON_CLICK);
     
+    // Check if this was a blackjack hand
+    const currentHand = playerHands[activeHandIndex];
+    const isCurrentHandBlackjack = isBlackjack(currentHand.cards);
+    
     if (activeHandIndex < playerHands.length - 1) {
       // Move to next hand if there are more
       setActiveHandIndex(activeHandIndex + 1);
-      setMessage(`Playing hand ${activeHandIndex + 2}...`);
+      
+      // Check if the next hand has blackjack
+      const nextHand = playerHands[activeHandIndex + 1];
+      if (isBlackjack(nextHand.cards)) {
+        playSound(SoundEffect.BLACKJACK);
+        setMessage(`Blackjack on hand ${activeHandIndex + 2}!`);
+      } else {
+        setMessage(`Playing hand ${activeHandIndex + 2}...`);
+      }
     } else {
+      // If current hand was blackjack, play blackjack sound
+      if (isCurrentHandBlackjack && !dealerCards[0].faceUp) {
+        playSound(SoundEffect.BLACKJACK);
+      }
+      
       handleDealerPlay(deck, playerHands, dealerCards);
     }
   };
@@ -310,6 +382,11 @@ const App: React.FC = () => {
     
     const currentHand = playerHands[activeHandIndex];
     const currentBet = currentHand.bet;
+    
+    // Cannot double down on a blackjack
+    if (isBlackjack(currentHand.cards)) {
+      return;
+    }
     
     // Check if player can double down
     if (currentHand.cards.length !== 2 || chips < currentBet) {
@@ -329,15 +406,29 @@ const App: React.FC = () => {
     
     if (!newCard) return;
     
+    // Play card dealing sound
+    playSound(SoundEffect.CARD_DEAL);
+    
     newPlayerHands[activeHandIndex].cards.push(newCard);
     setPlayerHands(newPlayerHands);
     setDeck(newDeck);
     
     // Automatically stand after double down
     if (isBusted(newPlayerHands[activeHandIndex].cards)) {
+      // Play bust sound
+      playSound(SoundEffect.LOSE);
+      
       if (activeHandIndex < playerHands.length - 1) {
         setActiveHandIndex(activeHandIndex + 1);
-        setMessage(`Playing hand ${activeHandIndex + 2}...`);
+        
+        // Check if the next hand has blackjack
+        const nextHand = newPlayerHands[activeHandIndex + 1];
+        if (isBlackjack(nextHand.cards)) {
+          playSound(SoundEffect.BLACKJACK);
+          setMessage(`Blackjack on hand ${activeHandIndex + 2}!`);
+        } else {
+          setMessage(`Playing hand ${activeHandIndex + 2}...`);
+        }
       } else {
         setMessage('Bust! You lose.');
         setPhase(GamePhase.GAME_OVER);
@@ -350,11 +441,27 @@ const App: React.FC = () => {
           largestLoss: Math.max(prev.largestLoss, currentBet * 2)
         }));
       }
-    } else if (activeHandIndex < playerHands.length - 1) {
-      setActiveHandIndex(activeHandIndex + 1);
-      setMessage(`Playing hand ${activeHandIndex + 2}...`);
     } else {
-      handleDealerPlay(newDeck, newPlayerHands, dealerCards);
+      // Check if we got exactly 21 (not a blackjack)
+      // Don't play win sound until we compare with dealer's hand
+      if (getBestHandValue(newPlayerHands[activeHandIndex].cards) === 21) {
+        setMessage('21! Moving to next hand...');
+      }
+      
+      if (activeHandIndex < playerHands.length - 1) {
+        setActiveHandIndex(activeHandIndex + 1);
+        
+        // Check if the next hand has blackjack
+        const nextHand = newPlayerHands[activeHandIndex + 1];
+        if (isBlackjack(nextHand.cards)) {
+          playSound(SoundEffect.BLACKJACK);
+          setMessage(`Blackjack on hand ${activeHandIndex + 2}!`);
+        } else {
+          setMessage(`Playing hand ${activeHandIndex + 2}...`);
+        }
+      } else {
+        handleDealerPlay(newDeck, newPlayerHands, dealerCards);
+      }
     }
   };
   
@@ -397,19 +504,63 @@ const App: React.FC = () => {
       newPlayerHands[activeHandIndex].cards.push(card1);
       newPlayerHands[activeHandIndex + 1].cards.push(card2);
       
+      // Check if any of the split hands have blackjack
+      const firstHandHasBlackjack = isBlackjack(newPlayerHands[activeHandIndex].cards);
+      const secondHandHasBlackjack = isBlackjack(newPlayerHands[activeHandIndex + 1].cards);
+      
       setPlayerHands(newPlayerHands);
       setDeck(newDeck);
       
       // Check if splitting aces (special rule: only one card per ace)
       if (currentHand.cards[0].rank === 'A') {
+        // Check for blackjacks
+        if (firstHandHasBlackjack) {
+          playSound(SoundEffect.BLACKJACK);
+          setMessage('Blackjack on first hand! Playing next hand...');
+        }
+        
         if (activeHandIndex < newPlayerHands.length - 1) {
           setActiveHandIndex(activeHandIndex + 1);
-          setMessage(`Playing next hand...`);
+          
+          // Check if second hand has blackjack when moving to it
+          if (secondHandHasBlackjack) {
+            playSound(SoundEffect.BLACKJACK);
+            setMessage('Blackjack on second hand!');
+            // Move directly to dealer play if this is the last hand
+            if (activeHandIndex + 1 >= newPlayerHands.length - 1) {
+              handleDealerPlay(newDeck, newPlayerHands, dealerCards);
+            }
+          } else {
+            setMessage(`Playing next hand...`);
+          }
         } else {
           handleDealerPlay(newDeck, newPlayerHands, dealerCards);
         }
       } else {
-        setMessage('Cards split. Playing first hand...');
+        // Not aces, check for blackjack on first hand
+        if (firstHandHasBlackjack) {
+          playSound(SoundEffect.BLACKJACK);
+          setMessage('Blackjack on first hand! Moving to next hand...');
+          
+          // Move to next hand if available
+          if (activeHandIndex < newPlayerHands.length - 1) {
+            setActiveHandIndex(activeHandIndex + 1);
+            
+            // Check if second hand has blackjack when moving to it
+            if (secondHandHasBlackjack) {
+              playSound(SoundEffect.BLACKJACK);
+              setMessage('Blackjack on second hand!');
+              // Move directly to dealer play if this is the last hand
+              if (activeHandIndex + 1 >= newPlayerHands.length - 1) {
+                handleDealerPlay(newDeck, newPlayerHands, dealerCards);
+              }
+            }
+          } else {
+            handleDealerPlay(newDeck, newPlayerHands, dealerCards);
+          }
+        } else {
+          setMessage('Cards split. Playing first hand...');
+        }
       }
     }
   };

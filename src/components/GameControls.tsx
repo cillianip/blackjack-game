@@ -1,7 +1,7 @@
 // src/components/GameControls.tsx
 import React from 'react';
 import { Card, GamePhase } from '../models/types';
-import { canDoubleDown, canSplit } from '../utils/cardUtils';
+import { canDoubleDown, canSplit, isBlackjack } from '../utils/cardUtils';
 
 interface GameControlsProps {
   phase: GamePhase;
@@ -45,6 +45,25 @@ const GameControls: React.FC<GameControlsProps> = ({
   if (phase === GamePhase.PLAYER_TURN) {
     const canDouble = canDoubleDown(cards) && chips >= currentBet;
     const canPlayerSplit = canSplit(cards) && chips >= currentBet;
+    const hasBlackjack = isBlackjack(cards);
+    
+    // If the player has blackjack in this hand, they should only be able to stand
+    if (hasBlackjack) {
+      return (
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={onStand} style={buttonStyle}>Stand</button>
+          <span style={{ 
+            color: 'white', 
+            background: 'rgba(0,0,0,0.5)', 
+            padding: '10px', 
+            borderRadius: '4px',
+            fontWeight: 'bold' 
+          }}>
+            Blackjack!
+          </span>
+        </div>
+      );
+    }
     
     return (
       <div style={{ display: 'flex', gap: '10px' }}>
